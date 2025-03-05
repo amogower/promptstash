@@ -11,20 +11,43 @@ const AUTOSAVE_DELAY = 1000; // 1 second delay
 export function PromptEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { prompts, categories, updatePrompt, deletePrompt, fetchCategories, autoSave, togglePublicAccess } = useStore();
+  const { prompts, categories, updatePrompt, deletePrompt, fetchCategories, fetchPrompts, autoSave, togglePublicAccess } = useStore();
   const prompt = prompts.find(p => p.id === id);
-  const [title, setTitle] = React.useState(prompt?.title || '');
-  const [content, setContent] = React.useState(prompt?.content || '');
-  const [categoryId, setCategoryId] = React.useState(prompt?.category_id || '');
+  const [title, setTitle] = React.useState('');
+  const [content, setContent] = React.useState('');
+  const [categoryId, setCategoryId] = React.useState('');
   const [variables, setVariables] = React.useState<string[]>([]);
   const [variableValues, setVariableValues] = React.useState<Record<string, string>>({});
   const [copied, setCopied] = React.useState(false);
   const [showVersionHistory, setShowVersionHistory] = React.useState(false);
   const [validationError, setValidationError] = React.useState<string | null>(null);
+  const [hasChanges, setHasChanges] = React.useState(false);
 
+  // Fetch initial data
   React.useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    Promise.all([fetchPrompts(), fetchCategories()]);
+  }, [fetchPrompts, fetchCategories]);
+
+  // Update form when prompt data is loaded
+  React.useEffect(() => {
+    if (prompt) {
+      setTitle(prompt.title);
+      setContent(prompt.content);
+      setCategoryId(prompt.category_id || '');
+      setHasChanges(false);
+    }
+  }, [prompt]);
+
+  // Track changes
+  React.useEffect(() => {
+    if (!prompt) return;
+    
+    const hasContentChanged = content !== prompt.content;
+    const hasTitleChanged = title !== prompt.title;
+    const hasCategoryChanged = categoryId !== prompt.category_id;
+    
+    setHasChanges(hasContentChanged || hasTitleChanged || hasCategoryChanged);
+  }, [prompt, title, content, categoryId]);
 
   const handleCopy = async () => {
     let result = content;
@@ -298,7 +321,7 @@ export function PromptEditor() {
         )}
 
         <div className="flex justify-end">
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={!hasChanges || validationError !== null}>
             <Save className="h-4 w-4 mr-2" />
             Save Changes
           </Button>
