@@ -5,17 +5,18 @@ import { Button } from './ui/button';
 import { getVariableHighlightClass } from '@/lib/utils';
 import { Copy, Check, BookMarked, BookOpen, Share2, ArrowLeft } from 'lucide-react';
 import posthog from 'posthog-js';
+import { ShareHeader } from './ShareHeader';
 
 export function ShareBook() {
   const { bookId } = useParams();
   const navigate = useNavigate();
-  const { getPublicPromptBook } = useStore();
+  const { getPublicPromptBook, user } = useStore();
   const [book, setBook] = React.useState<PromptBook | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   const handlePromptClick = (prompt: Prompt) => {
-    posthog.capture('book:prompt_open', {
+    posthog.capture('book:prompt_click', {
       prompt_id: prompt.id,
       book_id: bookId
     });
@@ -34,7 +35,7 @@ export function ShareBook() {
             });
           } else {
             setBook(data);
-            posthog.capture('book:view', {
+            posthog.capture('book:page_view', {
               book_id: bookId,
               prompt_count: data.prompts?.length || 0
             });
@@ -58,10 +59,13 @@ export function ShareBook() {
 
   if (!book) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <BookOpen className="h-12 w-12 text-primary mx-auto" />
-          <div className="text-foreground">{error || 'This prompt book is no longer available'}</div>
+      <div className="min-h-screen flex flex-col bg-background">
+        {!user && <ShareHeader />}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <BookOpen className="h-12 w-12 text-primary mx-auto" />
+            <div className="text-foreground">{error || 'This prompt book is no longer available'}</div>
+          </div>
         </div>
       </div>
     );
@@ -95,7 +99,7 @@ export function ShareBook() {
                     e.stopPropagation();
                     const url = `${window.location.origin}/share/${prompt.share_id}`;
                     navigator.clipboard.writeText(url);
-                    posthog.capture('prompt:link_copy', {
+                    posthog.capture('prompt:share_link_copy', {
                       prompt_id: prompt.id,
                       from_book: true,
                       book_id: bookId
@@ -139,13 +143,15 @@ export function ShareBook() {
 export function Share() {
   const { shareId, bookId, promptId } = useParams();
   const navigate = useNavigate();
-  const { getPublicPrompt, getPublicPromptBook } = useStore();
+  const { getPublicPrompt, getPublicPromptBook, createPrompt, user } = useStore();
   const [prompt, setPrompt] = React.useState<Prompt | null>(null);
   const [book, setBook] = React.useState<PromptBook | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
   const [variableValues, setVariableValues] = React.useState<Record<string, string>>({});
+  const [duplicateLoading, setDuplicateLoading] = React.useState(false);
+  const [duplicateError, setDuplicateError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const loadData = async () => {
@@ -161,7 +167,8 @@ export function Share() {
             });
           } else {
             setPrompt(data);
-            posthog.capture('prompt:view', {
+            const isOwnPrompt = user && user.id === data.user_id;
+            posthog.capture(isOwnPrompt ? 'prompt:page_view_own' : 'prompt:page_view', {
               prompt_id: data.id,
               from_book: !!bookId,
               book_id: bookId,
@@ -181,7 +188,7 @@ export function Share() {
       }
     };
     loadData();
-  }, [shareId, promptId, bookId, getPublicPrompt, getPublicPromptBook]);
+  }, [shareId, promptId, bookId, getPublicPrompt, getPublicPromptBook, user]);
 
   const handleCopy = async () => {
     if (!prompt) return;
@@ -200,6 +207,34 @@ export function Share() {
     });
   };
 
+  const handleDuplicate = async () => {
+    if (!prompt) return;
+    setDuplicateLoading(true);
+    try {
+      const newPrompt = await createPrompt({
+        title: prompt.title,
+        content: prompt.content,
+        variables: prompt.variables,
+        category_id: null,
+        is_public: false,
+      });
+      if (newPrompt) {
+        posthog.capture('prompt:content_duplicate', {
+          original_prompt_id: prompt.id,
+          new_prompt_id: newPrompt.id,
+          from_book: !!bookId,
+          book_id: bookId
+        });
+        navigate(`/prompt/${newPrompt.id}`);
+      }
+    } catch (error) {
+      console.error('Error duplicating prompt:', error);
+      setDuplicateError('Failed to duplicate prompt');
+    } finally {
+      setDuplicateLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -210,10 +245,13 @@ export function Share() {
 
   if (!prompt) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <BookMarked className="h-12 w-12 text-primary mx-auto" />
-          <div className="text-foreground">{error || 'This prompt is no longer available'}</div>
+      <div className="min-h-screen flex flex-col bg-background">
+        {!user && <ShareHeader />}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <BookMarked className="h-12 w-12 text-primary mx-auto" />
+            <div className="text-foreground">{error || 'This prompt is no longer available'}</div>
+          </div>
         </div>
       </div>
     );
@@ -224,84 +262,102 @@ export function Share() {
     .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        {bookId && (
-          <div className="mb-6">
-            <Button
-              variant="ghost"
-              className="flex items-center gap-2 text-foreground hover:text-foreground/90"
-              onClick={() => navigate(`/share/book/${bookId}`)}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to {book?.title || 'Book'}</span>
-            </Button>
+    <div className="min-h-screen flex flex-col bg-background">
+      {!user && <ShareHeader />}
+      <div className="flex-1 p-6">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {bookId && (
+            <div className="mb-6">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-2 text-foreground hover:text-foreground/90"
+                onClick={() => navigate(`/share/book/${bookId}`)}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to {book?.title || 'Book'}</span>
+              </Button>
+            </div>
+          )}
+          <div className="flex items-center gap-4">
+            <BookMarked className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold text-foreground">{prompt.title}</h1>
           </div>
-        )}
-        <div className="flex items-center gap-4">
-          <BookMarked className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">{prompt.title}</h1>
-        </div>
-        <div className="rounded-lg border border-border bg-background p-4">
-          <pre className="whitespace-pre-wrap text-foreground font-mono text-sm">
-            {prompt.content.split(/(\{\{[^}]+\}\})/).map((part, i) => {
-              if (part.startsWith('{{') && part.endsWith('}}')) {
-                const variable = part.slice(2, -2).trim();
-                const variables = prompt.content.match(/\{\{([^}]+)\}\}/g)?.map(v => v.slice(2, -2).trim()) || [];
-                const variableIndex = variables.indexOf(variable);
-                const value = variableValues[variable];
-                return (
-                  <mark key={i} className={`${getVariableHighlightClass(variableIndex)} font-medium rounded px-1`}>
-                    {value || `[${variable}]`}
-                  </mark>
-                );
-              }
-              return <span key={i}>{part}</span>;
-            })}
-          </pre>
-          <div className="mt-4 flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopy}
-              className="flex items-center gap-2 text-foreground"
-            >
-              {copied ? (
-                <Check className="h-4 w-4 text-green-600" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-              <span>{copied ? 'Copied!' : 'Copy'}</span>
-            </Button>
-          </div>
-        </div>
-
-        {variables.length > 0 && (
           <div className="rounded-lg border border-border bg-background p-4">
-            <h2 className="text-lg font-medium mb-4 text-foreground">Generate Prompt</h2>
-            <div className="space-y-4">
-              {variables.map((variable: string) => (
-                <div key={variable}>
-                  <label className="block text-sm font-medium mb-1">
-                    <span className={`${getVariableHighlightClass(variables.indexOf(variable))} rounded px-2 py-0.5`}>
-                      {variable}
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    value={variableValues[variable] || ''}
-                    onChange={(e) => setVariableValues(prev => ({
-                      ...prev,
-                      [variable]: e.target.value
-                    }))}
-                    className="w-full rounded-md border border-border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-foreground"
-                    placeholder={`Enter value for ${variable}`}
-                  />
-                </div>
-              ))}
+            <pre className="whitespace-pre-wrap text-foreground font-mono text-sm">
+              {prompt.content.split(/(\{\{[^}]+\}\})/).map((part, i) => {
+                if (part.startsWith('{{') && part.endsWith('}}')) {
+                  const variable = part.slice(2, -2).trim();
+                  const variables = prompt.content.match(/\{\{([^}]+)\}\}/g)?.map(v => v.slice(2, -2).trim()) || [];
+                  const variableIndex = variables.indexOf(variable);
+                  const value = variableValues[variable];
+                  return (
+                    <mark key={i} className={`${getVariableHighlightClass(variableIndex)} font-medium rounded px-1`}>
+                      {value || `[${variable}]`}
+                    </mark>
+                  );
+                }
+                return <span key={i}>{part}</span>;
+              })}
+            </pre>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopy}
+                className="flex items-center gap-2 text-foreground"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+                <span>{copied ? 'Copied!' : 'Copy'}</span>
+              </Button>
+              {user && prompt && user.id !== prompt.user_id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDuplicate}
+                  className="flex items-center gap-2 text-foreground"
+                  disabled={duplicateLoading}
+                >
+                  <BookMarked className="h-4 w-4" />
+                  <span>Duplicate to My Library</span>
+                </Button>
+              )}
+              {duplicateError && (
+                <div className="text-red-600 text-sm mt-2">{duplicateError}</div>
+              )}
             </div>
           </div>
-        )}
+
+          {variables.length > 0 && (
+            <div className="rounded-lg border border-border bg-background p-4">
+              <h2 className="text-lg font-medium mb-4 text-foreground">Generate Prompt</h2>
+              <div className="space-y-4">
+                {variables.map((variable: string) => (
+                  <div key={variable}>
+                    <label className="block text-sm font-medium mb-1">
+                      <span className={`${getVariableHighlightClass(variables.indexOf(variable))} rounded px-2 py-0.5`}>
+                        {variable}
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={variableValues[variable] || ''}
+                      onChange={(e) => setVariableValues(prev => ({
+                        ...prev,
+                        [variable]: e.target.value
+                      }))}
+                      className="w-full rounded-md border border-border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-foreground"
+                      placeholder={`Enter value for ${variable}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
