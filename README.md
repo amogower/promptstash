@@ -1,5 +1,7 @@
 # PromptStash
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/07c98453-9656-464b-b100-ffe84da18a5d/deploy-status)](https://app.netlify.com/sites/promptstash/deploys)
+
 PromptStash is a modern web application for managing, organizing, and sharing AI prompts. Built with React, TypeScript, and Supabase, it helps users create, version, and organize their AI prompts in a collaborative environment.
 
 ## Features
