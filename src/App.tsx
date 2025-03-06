@@ -78,13 +78,13 @@ function App() {
           <Header onMenuClick={() => setSidebarOpen(true)} />
         </div>
         <div className="flex pt-16 flex-1 h-[calc(100vh-4rem)] overflow-hidden">
-          <div className="hidden lg:block h-full">
+          <div className="hidden lg:block h-[calc(100vh-4rem)]">
             <Sidebar />
           </div>
           <Drawer open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
             <Sidebar onNavigate={() => setSidebarOpen(false)} />
           </Drawer>
-          <main className="flex-1 h-full p-6 overflow-y-auto relative">
+          <main className="flex-1 h-[calc(100vh-4rem)] p-6 overflow-y-auto relative">
             <Routes>
               <Route path="/" element={<Library />} />
               <Route path="/prompts" element={<Library />} />

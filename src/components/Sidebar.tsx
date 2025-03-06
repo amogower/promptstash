@@ -39,7 +39,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   };
 
   return (
-    <div className="w-64 h-full border-r border-border bg-background p-4 overflow-y-auto">
+    <div className="w-64 h-[calc(100vh-4rem)] border-r border-border bg-background p-4 overflow-y-auto">
       <nav className="space-y-2">
         <Button
           variant="ghost"
