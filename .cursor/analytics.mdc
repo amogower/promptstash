@@ -1,0 +1,37 @@
+---
+description: Posthog is used for analytics
+globs: 
+alwaysApply: false
+---
+  - Posthog is used for analytics.
+  - Use posthog.capture() to track events.
+  - Use posthog.identify() to identify users.
+  - For event names, use the category:object_action framework to make it easier to find a specific event within a long list:
+    - category describes the context the event took place in, e.g., account_settings or signup_flow.
+    - object is a noun that refers to the component or location the event took place in, e.g., forgot_password_button or pricing_page.
+    - action is a verb that describes what happened, e.g., click, submit, or create.
+    - Putting all of these together, you get account_settings:forgot_password_button_click or signup_flow:pricing_page_view.
+  - For property names:
+    - Use the object_adjective pattern, e.g., user_id, item_price, or member_count.
+    - Use is/has prefixes for boolean properties, e.g., is_subscribed, has_seen_upsell.
+    - If the property's value is a date or timestamp, include _date or _timestamp at the end, e.g., user_creation_date, last_Vjjlogin_timestamp.
+  - Only use lowercase letters.
+  - Use present-tense verbs, e.g., "submit" and "create" instead of "submitted" and "created".
+  - Use snake case, i.e., signup_button_click.
+  - List of common allowed verbs:
+    - click
+    - submit
+    - create
+    - view
+    - add
+    - invite
+    - update
+    - delete
+    - remove
+    - start
+    - end
+    - cancel
+    - fail
+    - generate
+    - send
+  - Versioning: If you initially tracked event as registration:sign_up_button_click and later revamped the registration flow, introduce a new version of the event registration_v2:sign_up_button_click

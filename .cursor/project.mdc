@@ -1,0 +1,8 @@
+---
+description: Project overview
+globs: 
+alwaysApply: false
+---
+  - Promptstash is a prompt management tool that allows users to create, share, and manage prompts for their AI applications.
+  - It is built using React, TypeScript, and Tailwind CSS, using Vite as the build tool.
+  - It is currently in production.
