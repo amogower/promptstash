@@ -4,6 +4,7 @@ import { useStore, Prompt, PromptBook } from '@/lib/store';
 import { Button } from './ui/button';
 import { getVariableHighlightClass } from '@/lib/utils';
 import { Copy, Check, BookMarked, BookOpen, Share2, ArrowLeft } from 'lucide-react';
+import posthog from 'posthog-js';
 
 export function ShareBook() {
   const { bookId } = useParams();
@@ -14,6 +15,10 @@ export function ShareBook() {
   const [error, setError] = React.useState<string | null>(null);
 
   const handlePromptClick = (prompt: Prompt) => {
+    posthog.capture('shared:prompt_opened_from_book', {
+      prompt_id: prompt.id,
+      book_id: bookId
+    });
     navigate(`/share/book/${bookId}/prompt/${prompt.id}`);
   };
 
@@ -24,8 +29,15 @@ export function ShareBook() {
           const data = await getPublicPromptBook(bookId);
           if (!data) {
             setError('This prompt book is no longer available');
+            posthog.capture('shared:book_not_found', {
+              book_id: bookId
+            });
           } else {
             setBook(data);
+            posthog.capture('shared:book_viewed', {
+              book_id: bookId,
+              prompt_count: data.prompts?.length || 0
+            });
           }
         } catch (err) {
           setError((err as Error).message);
@@ -83,6 +95,11 @@ export function ShareBook() {
                     e.stopPropagation();
                     const url = `${window.location.origin}/share/${prompt.share_id}`;
                     navigator.clipboard.writeText(url);
+                    posthog.capture('shared:prompt_link_copied', {
+                      prompt_id: prompt.id,
+                      from_book: true,
+                      book_id: bookId
+                    });
                   }}
                 >
                   <Share2 className="h-4 w-4" />
@@ -137,8 +154,19 @@ export function Share() {
           const data = await getPublicPrompt(shareId || promptId || '');
           if (!data) {
             setError('This prompt is no longer available');
+            posthog.capture('shared:prompt_not_found', {
+              prompt_id: shareId || promptId,
+              from_book: !!bookId,
+              book_id: bookId
+            });
           } else {
             setPrompt(data);
+            posthog.capture('shared:prompt_viewed', {
+              prompt_id: data.id,
+              from_book: !!bookId,
+              book_id: bookId,
+              has_variables: (data.content.match(/\{\{([^}]+)\}\}/g) || []).length > 0
+            });
             if (bookId) {
               const bookData = await getPublicPromptBook(bookId);
               if (bookData) {
@@ -164,6 +192,12 @@ export function Share() {
     await navigator.clipboard.writeText(result);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    posthog.capture('shared:prompt_content_copied', {
+      prompt_id: prompt.id,
+      from_book: !!bookId,
+      book_id: bookId,
+      variables_filled: Object.values(variableValues).every(v => v !== '')
+    });
   };
 
   if (loading) {

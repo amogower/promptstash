@@ -2,6 +2,7 @@ import React from 'react';
 import { useStore } from '@/lib/store';
 import { Button } from './ui/button';
 import { LogIn, BookMarked } from 'lucide-react';
+import posthog from 'posthog-js';
 
 export function Auth() {
   const [email, setEmail] = React.useState('');
@@ -17,12 +18,23 @@ export function Auth() {
     try {
       if (isSignUp) {
         await signUp(email, password);
+        posthog.capture('auth:signup_completed', {
+          email_domain: email.split('@')[1]
+        });
         setIsSignUp(false);
       } else {
         await signIn(email, password);
+        posthog.capture('auth:login_completed', {
+          email_domain: email.split('@')[1]
+        });
       }
     } catch (err) {
-      setError((err as Error).message);
+      const errorMessage = (err as Error).message;
+      setError(errorMessage);
+      posthog.capture('auth:authentication_failed', {
+        error: errorMessage,
+        type: isSignUp ? 'signup' : 'login'
+      });
     }
   };
 
@@ -93,7 +105,12 @@ export function Auth() {
           <div className="text-center">
             <button
               type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                posthog.capture('auth:mode_switched', {
+                  to: !isSignUp ? 'signup' : 'login'
+                });
+              }}
               className="text-sm text-primary hover:text-primary/80"
             >
               {isSignUp

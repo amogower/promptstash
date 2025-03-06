@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { getVariableHighlightClass, validatePromptContent } from '@/lib/utils';
 import { Save, ArrowLeft, Info, Copy, Check, FolderOpen, Trash2, History, Share2, Globe } from 'lucide-react';
 import { VersionHistory } from './VersionHistory';
+import posthog from 'posthog-js';
 
 const AUTOSAVE_DELAY = 1000; // 1 second delay
 
@@ -118,6 +119,12 @@ export function PromptEditor() {
         variables,
         category_id: categoryId || null,
       });
+      posthog.capture('prompt:edit_saved', {
+        prompt_id: prompt.id,
+        category_id: categoryId || null,
+        variables_count: variables.length,
+        content_length: content.length
+      });
       navigate('/');
     }
   };
@@ -125,6 +132,10 @@ export function PromptEditor() {
   const handleDelete = async () => {
     if (prompt && confirm('Are you sure you want to delete this prompt?')) {
       await deletePrompt(prompt.id);
+      posthog.capture('prompt:deleted', {
+        prompt_id: prompt.id,
+        category_id: categoryId || null
+      });
       navigate('/');
     }
   };
@@ -147,7 +158,12 @@ export function PromptEditor() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowVersionHistory(true)}
+          onClick={() => {
+            setShowVersionHistory(true);
+            posthog.capture('prompt:version_history_viewed', {
+              prompt_id: prompt.id
+            });
+          }}
           className="mr-2"
         >
           <History className="h-4 w-4 mr-2" />
@@ -158,10 +174,18 @@ export function PromptEditor() {
           size="sm"
           onClick={async () => {
             if (prompt) {
-              await togglePublicAccess(prompt.id, !prompt.is_public);
-              if (prompt.is_public) {
+              const newState = !prompt.is_public;
+              await togglePublicAccess(prompt.id, newState);
+              posthog.capture('prompt:visibility_changed', {
+                prompt_id: prompt.id,
+                is_public: newState
+              });
+              if (newState) {
                 const url = `${window.location.origin}/share/${prompt.share_id}`;
                 navigator.clipboard.writeText(url);
+                posthog.capture('prompt:share_url_copied', {
+                  prompt_id: prompt.id
+                });
               }
             }
           }}

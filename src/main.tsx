@@ -7,11 +7,11 @@ import './index.css';
 
 // Track PWA installation status
 window.addEventListener('beforeinstallprompt', (e: BeforeInstallPromptEvent) => {
-  posthog.capture('pwa:prompt_shown');
+  posthog.capture('pwa:installation_prompted');
   
   // Track when user installs the PWA
   e.userChoice.then((choiceResult) => {
-    posthog.capture('pwa:prompt_responded', {
+    posthog.capture('pwa:installation_responded', {
       outcome: choiceResult.outcome,
       platform: choiceResult.platform
     });
@@ -20,16 +20,16 @@ window.addEventListener('beforeinstallprompt', (e: BeforeInstallPromptEvent) => 
 
 // Track when PWA is successfully installed
 window.addEventListener('appinstalled', () => {
-  posthog.capture('pwa:app_installed');
+  posthog.capture('pwa:installation_completed');
 });
 
 // Track online/offline status
 window.addEventListener('online', () => {
-  posthog.capture('network:connection_restored');
+  posthog.capture('network:status_restored');
 });
 
 window.addEventListener('offline', () => {
-  posthog.capture('network:connection_lost');
+  posthog.capture('network:status_lost');
 });
 
 // Initialize PostHog
@@ -56,7 +56,7 @@ const updateSW = registerSW({
   immediate: true,
   onRegistered(registration: ServiceWorkerRegistration | undefined) {
     // Track registration with service worker version
-    posthog.capture('serviceworker:registration_successful', {
+    posthog.capture('serviceworker:registration_completed', {
       registration: registration?.scope,
       version: registration?.active?.scriptURL || 'unknown'
     });
@@ -64,19 +64,19 @@ const updateSW = registerSW({
   onNeedRefresh() {
     // New version available
     const registration = navigator.serviceWorker?.controller?.scriptURL;
-    posthog.capture('pwa:update_available', {
+    posthog.capture('pwa:version_available', {
       current_version: registration || 'unknown'
     });
   },
   onOfflineReady() {
-    posthog.capture('pwa:offline_ready');
+    posthog.capture('pwa:offline_prepared');
   },
 });
 
 // Track when user accepts or ignores PWA updates
 if (updateSW) {
   window.updateSW = () => {
-    posthog.capture('pwa:update_accepted');
+    posthog.capture('pwa:version_accepted');
     updateSW();
   };
 }

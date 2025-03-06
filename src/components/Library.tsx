@@ -4,6 +4,7 @@ import { Prompt, useStore } from '@/lib/store';
 import { getRandomHoverScheme } from '@/lib/utils';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from './ui/button';
+import posthog from 'posthog-js';
 
 export function Library() {
   const { prompts, categories, loading, fetchPrompts, deletePrompt, setSelectedPrompt } = useStore();
@@ -17,6 +18,11 @@ export function Library() {
 
   const handlePromptClick = (prompt: Prompt) => {
     setSelectedPrompt(prompt);
+    posthog.capture('prompt:opened', {
+      prompt_id: prompt.id,
+      category_id: prompt.category_id,
+      from_category_view: !!categoryId
+    });
     navigate(`/prompt/${prompt.id}`);
   };
 
@@ -24,6 +30,10 @@ export function Library() {
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this prompt?')) {
       await deletePrompt(promptId);
+      posthog.capture('prompt:deleted_from_library', {
+        prompt_id: promptId,
+        category_id: categoryId || null
+      });
     }
   };
 
@@ -45,6 +55,15 @@ export function Library() {
             type="search"
             placeholder="Search prompts..."
             className="w-full rounded-md border border-border bg-background pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+            onChange={(e) => {
+              const query = e.target.value;
+              if (query.length > 2) {
+                posthog.capture('prompt:search_performed', {
+                  query_length: query.length,
+                  category_id: categoryId || null
+                });
+              }
+            }}
           />
         </div>
       </div>
@@ -76,6 +95,10 @@ export function Library() {
                         e.stopPropagation();
                         const url = `${window.location.origin}/share/${prompt.share_id}`;
                         navigator.clipboard.writeText(url);
+                        posthog.capture('prompt:share_url_copied', {
+                          prompt_id: prompt.id,
+                          from_library: true
+                        });
                       }}
                     >
                       <Share2 className="h-4 w-4" />
