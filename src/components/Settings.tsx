@@ -36,7 +36,7 @@ export function Settings() {
       localStorage.removeItem('theme');
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       updateSettings({ isDarkMode: systemDark });
-      posthog.capture('settings:theme_changed', {
+      posthog.capture('settings:theme_update', {
         theme: 'system',
         resulting_mode: systemDark ? 'dark' : 'light'
       });
@@ -44,14 +44,14 @@ export function Settings() {
       const isDark = themePreference === 'dark';
       localStorage.setItem('theme', themePreference);
       updateSettings({ isDarkMode: isDark });
-      posthog.capture('settings:theme_changed', {
+      posthog.capture('settings:theme_update', {
         theme: themePreference,
         resulting_mode: isDark ? 'dark' : 'light'
       });
     }
 
     if (formData.autoSave !== originalSettings.autoSave) {
-      posthog.capture('settings:autosave_changed', {
+      posthog.capture('settings:autosave_update', {
         enabled: formData.autoSave
       });
     }
@@ -61,7 +61,7 @@ export function Settings() {
       theme: themePreference
     });
 
-    posthog.capture('settings:preferences_saved');
+    posthog.capture('settings:preferences_save');
   };
 
   const handleThemeChange = (value: 'system' | 'light' | 'dark') => {
@@ -71,14 +71,14 @@ export function Settings() {
     if (value === 'system') {
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.classList.toggle('dark', systemDark);
-      posthog.capture('settings:theme_previewed', {
+      posthog.capture('settings:theme_preview', {
         theme: 'system',
         resulting_mode: systemDark ? 'dark' : 'light'
       });
     } else {
       const isDark = value === 'dark';
       document.documentElement.classList.toggle('dark', isDark);
-      posthog.capture('settings:theme_previewed', {
+      posthog.capture('settings:theme_preview', {
         theme: value,
         resulting_mode: isDark ? 'dark' : 'light'
       });
@@ -122,7 +122,7 @@ export function Settings() {
                   onChange={(e) => {
                     const newValue = e.target.checked;
                     setFormData(prev => ({ ...prev, autoSave: newValue }));
-                    posthog.capture('settings:autosave_toggled', {
+                    posthog.capture('settings:autosave_toggle', {
                       enabled: newValue
                     });
                   }}

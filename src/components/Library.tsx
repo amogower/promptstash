@@ -18,7 +18,7 @@ export function Library() {
 
   const handlePromptClick = (prompt: Prompt) => {
     setSelectedPrompt(prompt);
-    posthog.capture('prompt:opened', {
+    posthog.capture('prompt:content_open', {
       prompt_id: prompt.id,
       category_id: prompt.category_id,
       from_category_view: !!categoryId
@@ -30,7 +30,7 @@ export function Library() {
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this prompt?')) {
       await deletePrompt(promptId);
-      posthog.capture('prompt:deleted_from_library', {
+      posthog.capture('library:prompt_delete', {
         prompt_id: promptId,
         category_id: categoryId || null
       });
@@ -58,7 +58,7 @@ export function Library() {
             onChange={(e) => {
               const query = e.target.value;
               if (query.length > 2) {
-                posthog.capture('prompt:search_performed', {
+                posthog.capture('library:search_submit', {
                   query_length: query.length,
                   category_id: categoryId || null
                 });

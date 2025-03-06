@@ -119,7 +119,7 @@ export function PromptEditor() {
         variables,
         category_id: categoryId || null,
       });
-      posthog.capture('prompt:edit_saved', {
+      posthog.capture('prompt:save_edit', {
         prompt_id: prompt.id,
         category_id: categoryId || null,
         variables_count: variables.length,
@@ -132,7 +132,7 @@ export function PromptEditor() {
   const handleDelete = async () => {
     if (prompt && confirm('Are you sure you want to delete this prompt?')) {
       await deletePrompt(prompt.id);
-      posthog.capture('prompt:deleted', {
+      posthog.capture('prompt:delete', {
         prompt_id: prompt.id,
         category_id: categoryId || null
       });
@@ -160,7 +160,7 @@ export function PromptEditor() {
           size="sm"
           onClick={() => {
             setShowVersionHistory(true);
-            posthog.capture('prompt:version_history_viewed', {
+            posthog.capture('prompt:history_view', {
               prompt_id: prompt.id
             });
           }}
@@ -176,14 +176,14 @@ export function PromptEditor() {
             if (prompt) {
               const newState = !prompt.is_public;
               await togglePublicAccess(prompt.id, newState);
-              posthog.capture('prompt:visibility_changed', {
+              posthog.capture('prompt:visibility_update', {
                 prompt_id: prompt.id,
                 is_public: newState
               });
               if (newState) {
                 const url = `${window.location.origin}/share/${prompt.share_id}`;
                 navigator.clipboard.writeText(url);
-                posthog.capture('prompt:share_url_copied', {
+                posthog.capture('prompt:link_copy', {
                   prompt_id: prompt.id
                 });
               }

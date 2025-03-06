@@ -18,20 +18,20 @@ export function Auth() {
     try {
       if (isSignUp) {
         await signUp(email, password);
-        posthog.capture('auth:signup_completed', {
+        posthog.capture('auth:signup_complete', {
           email_domain: email.split('@')[1]
         });
         setIsSignUp(false);
       } else {
         await signIn(email, password);
-        posthog.capture('auth:login_completed', {
+        posthog.capture('auth:login_complete', {
           email_domain: email.split('@')[1]
         });
       }
     } catch (err) {
       const errorMessage = (err as Error).message;
       setError(errorMessage);
-      posthog.capture('auth:authentication_failed', {
+      posthog.capture('auth:login_fail', {
         error: errorMessage,
         type: isSignUp ? 'signup' : 'login'
       });
@@ -107,7 +107,7 @@ export function Auth() {
               type="button"
               onClick={() => {
                 setIsSignUp(!isSignUp);
-                posthog.capture('auth:mode_switched', {
+                posthog.capture('auth:mode_switch', {
                   to: !isSignUp ? 'signup' : 'login'
                 });
               }}

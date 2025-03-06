@@ -15,7 +15,7 @@ export function ShareBook() {
   const [error, setError] = React.useState<string | null>(null);
 
   const handlePromptClick = (prompt: Prompt) => {
-    posthog.capture('shared:prompt_opened_from_book', {
+    posthog.capture('book:prompt_open', {
       prompt_id: prompt.id,
       book_id: bookId
     });
@@ -29,12 +29,12 @@ export function ShareBook() {
           const data = await getPublicPromptBook(bookId);
           if (!data) {
             setError('This prompt book is no longer available');
-            posthog.capture('shared:book_not_found', {
+            posthog.capture('book:not_found', {
               book_id: bookId
             });
           } else {
             setBook(data);
-            posthog.capture('shared:book_viewed', {
+            posthog.capture('book:view', {
               book_id: bookId,
               prompt_count: data.prompts?.length || 0
             });
@@ -95,7 +95,7 @@ export function ShareBook() {
                     e.stopPropagation();
                     const url = `${window.location.origin}/share/${prompt.share_id}`;
                     navigator.clipboard.writeText(url);
-                    posthog.capture('shared:prompt_link_copied', {
+                    posthog.capture('prompt:link_copy', {
                       prompt_id: prompt.id,
                       from_book: true,
                       book_id: bookId
@@ -154,14 +154,14 @@ export function Share() {
           const data = await getPublicPrompt(shareId || promptId || '');
           if (!data) {
             setError('This prompt is no longer available');
-            posthog.capture('shared:prompt_not_found', {
+            posthog.capture('prompt:not_found', {
               prompt_id: shareId || promptId,
               from_book: !!bookId,
               book_id: bookId
             });
           } else {
             setPrompt(data);
-            posthog.capture('shared:prompt_viewed', {
+            posthog.capture('prompt:view', {
               prompt_id: data.id,
               from_book: !!bookId,
               book_id: bookId,
@@ -192,7 +192,7 @@ export function Share() {
     await navigator.clipboard.writeText(result);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    posthog.capture('shared:prompt_content_copied', {
+    posthog.capture('prompt:content_copy', {
       prompt_id: prompt.id,
       from_book: !!bookId,
       book_id: bookId,
