@@ -86,16 +86,16 @@ export function Library() {
                 onClick={() => handlePromptClick(prompt)}
               >
                 <div className="absolute right-2 top-2 flex gap-2 opacity-0 group-hover:opacity-100">
-                  {prompt.is_public && (
+                  {prompt.is_public && prompt.share_id && (
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const url = `${window.location.origin}/share/${prompt.share_id}`;
+                        const url = `${window.location.origin}/share/prompt/${prompt.share_id}`;
                         navigator.clipboard.writeText(url);
-                        posthog.capture('prompt:share_url_copied', {
+                        posthog.capture('prompt:link_copy', {
                           prompt_id: prompt.id,
                           from_library: true
                         });
