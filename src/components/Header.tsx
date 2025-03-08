@@ -42,8 +42,8 @@ export function Header({ onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="border-b border-border bg-background/80 backdrop-blur-sm">
-      <div className="flex h-16 items-center px-4 md:px-6">
+    <header className="border-b border-border bg-background/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
+      <div className="flex h-16 items-center px-4 md:px-6" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <Button
           variant="ghost"
           size="icon"
