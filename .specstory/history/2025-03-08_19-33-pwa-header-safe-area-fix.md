@@ -104,6 +104,252 @@ These changes will ensure that the header content is properly positioned below t
 
 ---
 
+_**User**_
+
+Add a bit more toop and bottom padding for aesthetics. Also ensure the same safe area inset + extra padding is applied to all elements not affected by the main layout (e.g. @Sidebar.tsx )
+
+---
+
+_**Assistant**_
+
+I'll update the padding for both headers and ensure the sidebar also respects the safe area insets. Let me make these changes:
+
+---
+
+_****_
+
+```diff
+    return (
+      <header className="border-b border-border bg-background/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
+-       <div className="flex h-16 items-center px-4 md:px-6" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
++       <div className="flex h-[4.5rem] items-center px-4 md:px-6" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)', paddingBottom: '0.75rem' }}>
+          <Button
+            variant="ghost"
+```
+
+---
+
+_****_
+
+```diff
+    return (
+      <header className="border-b border-border bg-background/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
+-       <div className="flex h-16 items-center px-4 md:px-6" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
++       <div className="flex h-[4.5rem] items-center px-4 md:px-6" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)', paddingBottom: '0.75rem' }}>
+          <div className="flex items-center gap-4">
+            <BookMarked
+```
+
+---
+
+_****_
+
+```diff
+  
+    return (
+-     <div className="w-64 h-[calc(100vh-4rem)] border-r border-border bg-background p-4 overflow-y-auto">
+-       <nav className="space-y-2">
+-         <Button
+-           variant="ghost"
+-           onClick={() => handleNavigate('/prompts')}
+-           className="w-full justify-start gap-2"
+-         >
+-           <FolderOpen className="h-4 w-4" />
+-           All Prompts
+-         </Button>
+-         <Button
+-           variant="ghost"
+-           onClick={() => handleNavigate('/books')}
+-           className="w-full justify-start gap-2"
+-         >
+-           <BookOpen className="h-4 w-4" />
+-           Prompt Books
+-         </Button>
+-         <div className="py-2">
+-           <div className="flex items-center justify-between mb-2 px-2">
+-             <h2 className="text-sm font-semibold text-foreground/60">
+-               Categories
+-             </h2>
+-             <Button
+-               variant="ghost"
+-               size="sm"
+-               className="h-6 w-6 p-0"
+-               onClick={() => setIsAdding(true)}
+-             >
+-               <Plus className="h-4 w-4" />
+-             </Button>
+-           </div>
+-           {isAdding && (
+-             <div className="mb-2 px-2 flex gap-2">
+-               <input
+-                 type="text"
+-                 value={newCategory}
+-                 onChange={(e) => setNewCategory(e.target.value)}
+-                 placeholder="Category name"
+-                 className="flex-1 text-sm rounded border border-border bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+-                 onKeyDown={(e) => {
+-                   if (e.key === 'Enter') handleCreateCategory();
+-                   if (e.key === 'Escape') setIsAdding(false);
+-                 }}
+-               />
+-               <Button
+-                 size="sm"
+-                 className="h-6 px-2 py-0"
+-                 onClick={handleCreateCategory}
+-               >
+-                 Add
+-               </Button>
+-             </div>
+-           )}
+-           {categories.map((category) => (
+-             <div key={category.id} className="group relative">
+-               <Button
+-                 variant="ghost"
+-                 onClick={() => handleNavigate(`/prompts/category/${category.id}`)}
+-                 className="w-full justify-start gap-2"
+-               >
+-                 <Hash className="h-4 w-4" />
+-                 {category.name}
+-               </Button>
+-               <Button
+-                 variant="ghost"
+-                 size="sm"
+-                 className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+-                 onClick={(e) => handleDeleteCategory(category.id, e)}
+-               >
+-                 <Trash2 className="h-3 w-3 text-red-500" />
+-               </Button>
+-             </div>
+-           ))}
+-         </div>
+-         <div className="mt-auto pt-4">
+-           <Button
+-             variant="ghost"
+-             onClick={() => handleNavigate('/settings')}
+-             className="w-full justify-start gap-2"
+-           >
+-             <Settings className="h-4 w-4" />
+-             Settings
+-           </Button>
+-         </div>
+-       </nav>
++     <div className="w-64 h-[calc(100vh-4.5rem)] border-r border-border bg-background overflow-y-auto">
++       <div className="p-4" style={{ paddingTop: 'max(env(safe-area-inset-left), 1rem)', paddingLeft: 'max(env(safe-area-inset-left), 1rem)', paddingRight: '1rem' }}>
++         <nav className="space-y-2">
++           <Button
++             variant="ghost"
++             onClick={() => handleNavigate('/prompts')}
++             className="w-full justify-start gap-2"
++           >
++             <FolderOpen className="h-4 w-4" />
++             All Prompts
++           </Button>
++           <Button
++             variant="ghost"
++             onClick={() => handleNavigate('/books')}
++             className="w-full justify-start gap-2"
++           >
++             <BookOpen className="h-4 w-4" />
++             Prompt Books
++           </Button>
++           <div className="py-2">
++             <div className="flex items-center justify-between mb-2 px-2">
++               <h2 className="text-sm font-semibold text-foreground/60">
++                 Categories
++               </h2>
++               <Button
++                 variant="ghost"
++                 size="sm"
++                 className="h-6 w-6 p-0"
++                 onClick={() => setIsAdding(true)}
++               >
++                 <Plus className="h-4 w-4" />
++               </Button>
++             </div>
++             {isAdding && (
++               <div className="mb-2 px-2 flex gap-2">
++                 <input
++                   type="text"
++                   value={newCategory}
++                   onChange={(e) => setNewCategory(e.target.value)}
++                   placeholder="Category name"
++                   className="flex-1 text-sm rounded border border-border bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
++                   onKeyDown={(e) => {
++                     if (e.key === 'Enter') handleCreateCategory();
++                     if (e.key === 'Escape') setIsAdding(false);
++                   }}
++                 />
++                 <Button
++                   size="sm"
++                   className="h-6 px-2 py-0"
++                   onClick={handleCreateCategory}
++                 >
++                   Add
++                 </Button>
++               </div>
++             )}
++             {categories.map((category) => (
++               <div key={category.id} className="group relative">
++                 <Button
++                   variant="ghost"
++                   onClick={() => handleNavigate(`/prompts/category/${category.id}`)}
++                   className="w-full justify-start gap-2"
++                 >
++                   <Hash className="h-4 w-4" />
++                   {category.name}
++                 </Button>
++                 <Button
++                   variant="ghost"
++                   size="sm"
++                   className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
++                   onClick={(e) => handleDeleteCategory(category.id, e)}
++                 >
++                   <Trash2 className="h-3 w-3 text-red-500" />
++                 </Button>
++               </div>
++             ))}
++           </div>
++           <div className="mt-auto pt-4">
++             <Button
++               variant="ghost"
++               onClick={() => handleNavigate('/settings')}
++               className="w-full justify-start gap-2"
++             >
++               <Settings className="h-4 w-4" />
++               Settings
++             </Button>
++           </div>
++         </nav>
++       </div>
+      </div>
+    );
+```
+
+---
+
+_****_
+
+I've made several improvements to handle safe area insets and padding:
+
+1. Headers (both main and share):
+- Increased height from `h-16` (4rem) to `h-[4.5rem]` for more space
+- Added `paddingTop: 'max(env(safe-area-inset-top), 0.75rem)'` to ensure minimum padding even without safe area insets
+- Added `paddingBottom: '0.75rem'` for consistent spacing
+
+2. Sidebar:
+- Updated height calculation to match new header height: `h-[calc(100vh-4.5rem)]`
+- Added safe area inset padding for the left side: `paddingLeft: 'max(env(safe-area-inset-left), 1rem)'`
+- Maintained consistent padding on other sides
+- Wrapped content in a div to properly handle the padding without affecting the scrollable area
+
+These changes ensure that:
+1. The header has more breathing room and properly respects safe area insets
+2. The sidebar properly aligns with the new header height
+3. All elements respect safe area insets where applicable
+4. The layout maintains consistent padding even on devices without safe area insets
+
+---
+
 
 
 ---

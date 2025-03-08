@@ -10,7 +10,7 @@ export function ShareHeader() {
 
   return (
     <header className="border-b border-border bg-background/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
-      <div className="flex h-16 items-center px-4 md:px-6" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <div className="flex h-[4.5rem] items-center px-4 md:px-6" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)', paddingBottom: '0.75rem' }}>
         <div className="flex items-center gap-4">
           <BookMarked
             className="h-6 w-6" 
