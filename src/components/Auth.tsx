@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '@/lib/store';
 import { Button } from './ui/button';
-import { LogIn, BookMarked } from 'lucide-react';
+import { LogIn, BookMarked, Github, Gitlab } from 'lucide-react';
 import posthog from 'posthog-js';
 
 export function Auth() {
@@ -9,7 +9,7 @@ export function Auth() {
   const [password, setPassword] = React.useState('');
   const [isSignUp, setIsSignUp] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const { signIn, signUp } = useStore();
+  const { signIn, signUp, signInWithGitHub, signInWithGitLab } = useStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,13 +19,15 @@ export function Auth() {
       if (isSignUp) {
         await signUp(email, password);
         posthog.capture('auth:signup_complete', {
-          email_domain: email.split('@')[1]
+          email_domain: email.split('@')[1],
+          method: 'email'
         });
         setIsSignUp(false);
       } else {
         await signIn(email, password);
         posthog.capture('auth:login_complete', {
-          email_domain: email.split('@')[1]
+          email_domain: email.split('@')[1],
+          method: 'email'
         });
       }
     } catch (err) {
@@ -33,7 +35,38 @@ export function Auth() {
       setError(errorMessage);
       posthog.capture('auth:login_fail', {
         error: errorMessage,
-        type: isSignUp ? 'signup' : 'login'
+        type: isSignUp ? 'signup' : 'login',
+        method: 'email'
+      });
+    }
+  };
+
+  const handleGitHubSignIn = async () => {
+    try {
+      setError(null);
+      posthog.capture('auth:social_login_start', { provider: 'github' });
+      await signInWithGitHub();
+    } catch (err) {
+      const errorMessage = (err as Error).message;
+      setError(errorMessage);
+      posthog.capture('auth:login_fail', {
+        error: errorMessage,
+        method: 'github'
+      });
+    }
+  };
+
+  const handleGitLabSignIn = async () => {
+    try {
+      setError(null);
+      posthog.capture('auth:social_login_start', { provider: 'gitlab' });
+      await signInWithGitLab();
+    } catch (err) {
+      const errorMessage = (err as Error).message;
+      setError(errorMessage);
+      posthog.capture('auth:login_fail', {
+        error: errorMessage,
+        method: 'gitlab'
       });
     }
   };
@@ -99,6 +132,36 @@ export function Auth() {
             <Button type="submit" className="w-full group">
               <LogIn className="h-4 w-4 mr-2" />
               {isSignUp ? 'Sign up' : 'Sign in'}
+            </Button>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-input"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-background text-foreground/60">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleGitHubSignIn}
+              className="w-full dark:border-foreground/20 dark:text-foreground"
+            >
+              <Github className="h-4 w-4 mr-2" />
+              GitHub
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleGitLabSignIn}
+              className="w-full dark:border-foreground/20 dark:text-foreground"
+            >
+              <Gitlab className="h-4 w-4 mr-2" />
+              GitLab
             </Button>
           </div>
 

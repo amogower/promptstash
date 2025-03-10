@@ -10,3 +10,9 @@
   from = "/*"
   to = "/index.html"
   status = 200 
+
+# Handle OAuth redirects properly
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

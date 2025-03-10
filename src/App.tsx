@@ -45,12 +45,29 @@ function App() {
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
+  
   React.useEffect(() => {
     const initAuth = async () => {
       await checkUser();
       setIsLoading(false);
     };
     initAuth();
+    
+    // Handle OAuth redirects
+    const handleHashChange = async () => {
+      // Check if we have a hash that might be from an OAuth redirect
+      if (window.location.hash.includes('access_token') || 
+          window.location.hash.includes('error')) {
+        await checkUser();
+      }
+    };
+    
+    // Check on initial load
+    handleHashChange();
+    
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [checkUser]);
 
   React.useEffect(() => {

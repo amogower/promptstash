@@ -79,6 +79,8 @@ export interface PromptStore {
   }) => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
+  signInWithGitHub: () => Promise<void>;
+  signInWithGitLab: () => Promise<void>;
   signOut: () => Promise<void>;
   checkUser: () => Promise<void>;
   fetchPrompts: () => Promise<void>;
@@ -164,6 +166,26 @@ export const useStore = create<PromptStore>((set, get) => ({
     const { error } = await supabase.auth.signUp({
       email,
       password,
+    });
+    if (error) throw error;
+  },
+
+  signInWithGitHub: async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) throw error;
+  },
+
+  signInWithGitLab: async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'gitlab',
+      options: {
+        redirectTo: window.location.origin,
+      },
     });
     if (error) throw error;
   },
