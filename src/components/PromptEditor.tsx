@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { Button } from './ui/button';
 import { getVariableHighlightClass, validatePromptContent } from '@/lib/utils';
-import { Save, ArrowLeft, Info, Copy, Check, FolderOpen, Trash2, History, Share2, Globe } from 'lucide-react';
+import { Save, ArrowLeft, Info, Copy, Check, FolderOpen, Trash2, History, Share2, Globe, Download } from 'lucide-react';
 import { VersionHistory } from './VersionHistory';
 import posthog from 'posthog-js';
 
@@ -12,7 +12,7 @@ const AUTOSAVE_DELAY = 1000; // 1 second delay
 export function PromptEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { prompts, categories, updatePrompt, deletePrompt, fetchCategories, fetchPrompts, autoSave, togglePublicAccess } = useStore();
+  const { prompts, categories, updatePrompt, deletePrompt, fetchCategories, fetchPrompts, autoSave, togglePublicAccess, createSavedGeneration } = useStore();
   const prompt = prompts.find(p => p.id === id);
   const [title, setTitle] = React.useState('');
   const [content, setContent] = React.useState('');
@@ -23,6 +23,7 @@ export function PromptEditor() {
   const [showVersionHistory, setShowVersionHistory] = React.useState(false);
   const [validationError, setValidationError] = React.useState<string | null>(null);
   const [hasChanges, setHasChanges] = React.useState(false);
+  const [savedGenerated, setSavedGenerated] = React.useState(false);
 
   // Fetch initial data
   React.useEffect(() => {
@@ -58,6 +59,42 @@ export function PromptEditor() {
     await navigator.clipboard.writeText(result);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveGenerated = async () => {
+    if (!prompt) return;
+    
+    // Generate the filled prompt content
+    let filledContent = content;
+    const filledVariables: Record<string, string> = {};
+    
+    Object.entries(variableValues).forEach(([variable, value]) => {
+      filledContent = filledContent.replace(
+        new RegExp(`\\{\\{${variable}\\}\\}`, 'g'), 
+        value || `[${variable}]`
+      );
+      filledVariables[variable] = value || '';
+    });
+    
+    // Save to database
+    const savedGeneration = await createSavedGeneration({
+      title: `${title} (Generated)`,
+      content: filledContent,
+      original_prompt_id: prompt.id,
+      variables: filledVariables,
+    });
+    
+    if (savedGeneration) {
+      posthog.capture('prompt:save_generated', {
+        original_prompt_id: prompt.id,
+        generation_id: savedGeneration.id,
+        variables_count: Object.keys(filledVariables).length,
+        content_length: filledContent.length
+      });
+      
+      setSavedGenerated(true);
+      setTimeout(() => setSavedGenerated(false), 2000);
+    }
   };
 
   React.useEffect(() => {
@@ -327,19 +364,34 @@ export function PromptEditor() {
                   />
                 </div>
               ))}
-              <Button onClick={handleCopy} className="w-full">
-                {copied ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Generated Prompt
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleCopy} className="flex-1">
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Generated Prompt
+                    </>
+                  )}
+                </Button>
+                <Button onClick={handleSaveGenerated} className="flex-1">
+                  {savedGenerated ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Saved!
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Save Generated Prompt
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         )}

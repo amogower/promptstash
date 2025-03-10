@@ -12,6 +12,7 @@ import { Share } from '@/components/Share';
 import { ShareBook } from '@/components/Share';
 import { PromptBooks } from '@/components/PromptBooks';
 import { PromptBookEditor } from '@/components/PromptBookEditor';
+import { SavedGenerations } from '@/components/SavedGenerations';
 import { getNextIconColor } from '@/lib/utils';
 
 function App() {
@@ -92,6 +93,7 @@ function App() {
               <Route path="/prompt/:id" element={<PromptEditor />} />
               <Route path="/books" element={<PromptBooks />} />
               <Route path="/books/:id" element={<PromptBookEditor />} />
+              <Route path="/generations" element={<SavedGenerations />} />
               <Route path="/share/book/:bookId" element={<ShareBook />} />
               <Route path="/share/book/:bookId/prompt/:promptId" element={<Share />} />
               <Route path="/share/prompt/:shareId" element={<Share />} />

@@ -36,6 +36,18 @@ export interface PromptVersion {
   created_by: string;
 }
 
+export interface SavedGeneration {
+  id: string;
+  title: string;
+  content: string;
+  original_prompt_id: string | null;
+  variables: Record<string, string>;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  original_prompt?: Prompt;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -46,6 +58,7 @@ export interface PromptStore {
   prompts: Prompt[];
   promptBooks: PromptBook[];
   categories: Category[];
+  savedGenerations: SavedGeneration[];
   user: User | null;
   selectedPrompt: Prompt | null;
   loading: boolean;
@@ -70,11 +83,15 @@ export interface PromptStore {
   checkUser: () => Promise<void>;
   fetchPrompts: () => Promise<void>;
   fetchCategories: () => Promise<void>;
+  fetchSavedGenerations: () => Promise<void>;
   createPrompt: (prompt: Partial<Prompt>) => Promise<Prompt | undefined>;
   createCategory: (category: { name: string; description?: string }) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   updatePrompt: (id: string, updates: Partial<Prompt>) => Promise<void>;
   deletePrompt: (id: string) => Promise<void>;
+  createSavedGeneration: (generation: Partial<SavedGeneration>) => Promise<SavedGeneration | undefined>;
+  updateSavedGeneration: (id: string, updates: Partial<SavedGeneration>) => Promise<void>;
+  deleteSavedGeneration: (id: string) => Promise<void>;
   setSelectedPrompt: (prompt: Prompt | null) => void;
   togglePublicAccess: (id: string, isPublic: boolean) => Promise<void>;
   getPublicPrompt: (shareId: string) => Promise<Prompt | null>;
@@ -88,6 +105,7 @@ export const useStore = create<PromptStore>((set, get) => ({
   prompts: [],
   categories: [],
   promptBooks: [],
+  savedGenerations: [],
   user: null,
   selectedPrompt: null,
   loading: false,
@@ -192,6 +210,26 @@ export const useStore = create<PromptStore>((set, get) => ({
     }
   },
 
+  fetchSavedGenerations: async () => {
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await supabase
+        .from('saved_generations')
+        .select(`
+          *,
+          original_prompt:prompts(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      set({ savedGenerations: data });
+    } catch (error) {
+      set({ error: (error as Error).message });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
   createCategory: async (category) => {
     try {
       const { data, error } = await supabase
@@ -248,6 +286,72 @@ export const useStore = create<PromptStore>((set, get) => ({
     }
 
     return undefined;
+  },
+
+  createSavedGeneration: async (generation): Promise<SavedGeneration | undefined> => {
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await supabase
+        .from('saved_generations')
+        .insert([generation])
+        .select(`
+          *,
+          original_prompt:prompts(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      set((state) => ({ savedGenerations: [data, ...state.savedGenerations] }));
+      return data;
+    } catch (error) {
+      set({ error: (error as Error).message });
+    } finally {
+      set({ loading: false });
+    }
+    return undefined;
+  },
+
+  updateSavedGeneration: async (id, updates) => {
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await supabase
+        .from('saved_generations')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select(`
+          *,
+          original_prompt:prompts(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      set((state) => ({
+        savedGenerations: state.savedGenerations.map((g) => (g.id === id ? data : g)),
+      }));
+    } catch (error) {
+      set({ error: (error as Error).message });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  deleteSavedGeneration: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const { error } = await supabase
+        .from('saved_generations')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      set((state) => ({
+        savedGenerations: state.savedGenerations.filter((g) => g.id !== id),
+      }));
+    } catch (error) {
+      set({ error: (error as Error).message });
+    } finally {
+      set({ loading: false });
+    }
   },
 
   updatePrompt: async (id, updates) => {

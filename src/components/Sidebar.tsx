@@ -1,5 +1,5 @@
 import React from 'react';
-import { FolderOpen, Hash, Settings, Plus, Trash2, BookOpen } from 'lucide-react';
+import { FolderOpen, Hash, Settings, Plus, Trash2, BookOpen, FileText } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -57,6 +57,14 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           >
             <BookOpen className="h-4 w-4" />
             Prompt Books
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => handleNavigate('/generations')}
+            className="w-full justify-start gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            Saved Generations
           </Button>
           <div className="py-2">
             <div className="flex items-center justify-between mb-2 px-2">
